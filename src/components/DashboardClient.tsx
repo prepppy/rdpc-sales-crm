@@ -3,6 +3,7 @@
 import { AppData, getSkuColor } from "@/lib/types";
 import { WeeklyChart } from "./WeeklyChart";
 import { SkuDonut } from "./SkuDonut";
+import Image from "next/image";
 import Link from "next/link";
 
 export function DashboardClient({ data }: { data: AppData }) {
@@ -24,9 +25,12 @@ export function DashboardClient({ data }: { data: AppData }) {
     <div className="max-w-lg mx-auto px-4 pt-2">
       {/* Header */}
       <header className="flex items-center justify-between py-4">
-        <div>
-          <h1 className="heading-section text-xl text-navy">Real Dough</h1>
-          <p className="text-navy/50 text-xs font-medium mt-0.5">Sales Dashboard</p>
+        <div className="flex items-center gap-3">
+          <Image src="/rd-logo.svg" alt="Real Dough Pizza Co." width={36} height={36} className="shrink-0" />
+          <div>
+            <h1 className="heading-section text-lg text-navy leading-tight">Real Dough</h1>
+            <p className="text-navy/50 text-xs font-medium">Sales Dashboard</p>
+          </div>
         </div>
         <div className="pill bg-navy text-cream">
           2026

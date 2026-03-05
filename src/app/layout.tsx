@@ -30,6 +30,15 @@ const barlowCondensed = Barlow_Condensed({
 export const metadata: Metadata = {
   title: "Real Dough Pizza Co. — Sales CRM",
   description: "Sales dashboard for Real Dough Pizza Co.",
+  icons: {
+    icon: "/icon.png",
+    apple: "/apple-icon.png",
+  },
+  openGraph: {
+    title: "Real Dough Pizza Co. — Sales CRM",
+    description: "Sales dashboard for Real Dough Pizza Co.",
+    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
+  },
 };
 
 export const viewport: Viewport = {

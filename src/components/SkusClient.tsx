@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Image from "next/image";
 import { AppData, getSkuColor } from "@/lib/types";
 import {
   BarChart,
@@ -68,11 +69,14 @@ export function SkusClient({ data }: { data: AppData }) {
   return (
     <div className="max-w-lg mx-auto px-4 pt-2">
       {/* Header */}
-      <header className="py-4">
-        <h1 className="heading-section text-xl text-navy">SKU Breakdown</h1>
-        <p className="text-navy/50 text-xs font-medium mt-0.5">
-          {skus.length} pizza varieties
-        </p>
+      <header className="py-4 flex items-center gap-3">
+        <Image src="/rd-logo.svg" alt="Real Dough Pizza Co." width={32} height={32} className="shrink-0" />
+        <div>
+          <h1 className="heading-section text-xl text-navy">SKU Breakdown</h1>
+          <p className="text-navy/50 text-xs font-medium">
+            {skus.length} pizza varieties
+          </p>
+        </div>
       </header>
 
       {/* Comparison Chart */}
