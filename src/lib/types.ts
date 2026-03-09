@@ -82,4 +82,5 @@ export const WEEK_LABELS: Record<string, string> = {
   w7: "Wk 7",
   w8: "Wk 8",
   w9: "Wk 9",
+  w10: "Wk 10",
 };
