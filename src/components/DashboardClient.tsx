@@ -73,7 +73,7 @@ export function DashboardClient({ data }: { data: AppData }) {
       <section className="card p-4 mb-4">
         <div className="flex items-center justify-between mb-3">
           <h2 className="heading-card text-sm text-navy">Weekly Units</h2>
-          <span className="pill bg-cream text-navy/70">Wks 6-9</span>
+          <span className="pill bg-cream text-navy/70">Wks {Object.keys(summary.weeklyTotals).map(k => k.replace("w", "")).join("-")}</span>
         </div>
         <WeeklyChart data={weeklyData} color="#26225d" />
       </section>

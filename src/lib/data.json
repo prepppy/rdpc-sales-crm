@@ -419,30 +419,6 @@
         "w10": 0
       },
       "total": 16
-    },
-    {
-      "code": "TARGET",
-      "name": "Target",
-      "weeks": {
-        "w6": 0,
-        "w7": 0,
-        "w8": 0,
-        "w9": 0,
-        "w10": 0
-      },
-      "total": 0
-    },
-    {
-      "code": "WALMART",
-      "name": "Wal-Mart",
-      "weeks": {
-        "w6": 0,
-        "w7": 0,
-        "w8": 0,
-        "w9": 0,
-        "w10": 0
-      },
-      "total": 0
     }
   ],
   "skus": [
@@ -35569,51 +35545,6 @@
       "total": 16
     },
     {
-      "retailerCode": "TARGET",
-      "retailer": "Target",
-      "store": "Target #1248 Kensington",
-      "itemCode": "47001",
-      "item": "Peppin' Ain't Easy",
-      "weeks": {
-        "w6": 0,
-        "w7": 0,
-        "w8": 0,
-        "w9": 0,
-        "w10": 0
-      },
-      "total": 0
-    },
-    {
-      "retailerCode": "TARGET",
-      "retailer": "Target",
-      "store": "Target #1248 Kensington",
-      "itemCode": "47005",
-      "item": "Curd Your Enthusiasm",
-      "weeks": {
-        "w6": 0,
-        "w7": 0,
-        "w8": 0,
-        "w9": 0,
-        "w10": 0
-      },
-      "total": 0
-    },
-    {
-      "retailerCode": "TARGET",
-      "retailer": "Target",
-      "store": "Target #1248 Kensington",
-      "itemCode": "47004",
-      "item": "Okie Dokie Artichokie",
-      "weeks": {
-        "w6": 0,
-        "w7": 0,
-        "w8": 0,
-        "w9": 0,
-        "w10": 0
-      },
-      "total": 0
-    },
-    {
       "retailerCode": "TEALS MKTS",
       "retailer": "Teal's Markets",
       "store": "Lake City Fresh Market",
@@ -36122,66 +36053,6 @@
         "w10": 0
       },
       "total": 8
-    },
-    {
-      "retailerCode": "WALMART",
-      "retailer": "Wal-Mart",
-      "store": "Walmart 2421 St Croix",
-      "itemCode": "47005",
-      "item": "Curd Your Enthusiasm",
-      "weeks": {
-        "w6": 0,
-        "w7": 0,
-        "w8": 0,
-        "w9": 0,
-        "w10": 0
-      },
-      "total": 0
-    },
-    {
-      "retailerCode": "WALMART",
-      "retailer": "Wal-Mart",
-      "store": "Walmart 2421 St Croix",
-      "itemCode": "47004",
-      "item": "Okie Dokie Artichokie",
-      "weeks": {
-        "w6": 0,
-        "w7": 0,
-        "w8": 0,
-        "w9": 0,
-        "w10": 0
-      },
-      "total": 0
-    },
-    {
-      "retailerCode": "WALMART",
-      "retailer": "Wal-Mart",
-      "store": "Walmart 2421 St Croix",
-      "itemCode": "47001",
-      "item": "Peppin' Ain't Easy",
-      "weeks": {
-        "w6": 0,
-        "w7": 0,
-        "w8": 0,
-        "w9": 0,
-        "w10": 0
-      },
-      "total": 0
-    },
-    {
-      "retailerCode": "WALMART",
-      "retailer": "Wal-Mart",
-      "store": "Walmart 2421 St Croix",
-      "itemCode": "47002",
-      "item": "Lost in the Sausage",
-      "weeks": {
-        "w6": 0,
-        "w7": 0,
-        "w8": 0,
-        "w9": 0,
-        "w10": 0
-      },
-      "total": 0
     },
     {
       "retailerCode": "WOODMANS",
@@ -46022,7 +45893,7 @@
   ],
   "summary": {
     "totalUnits": 51055,
-    "totalRetailers": 37,
+    "totalRetailers": 35,
     "totalStores": 651,
     "totalSKUs": 5,
     "weeklyTotals": {
