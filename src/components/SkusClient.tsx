@@ -14,7 +14,7 @@ import {
 } from "recharts";
 
 export function SkusClient({ data }: { data: AppData }) {
-  const { skus, storeItems, retailers } = data;
+  const { skus, storeItems, retailers, summary } = data;
   const [expandedSku, setExpandedSku] = useState<string | null>(null);
 
   const weeklyBySku = useMemo(() => {
@@ -32,9 +32,10 @@ export function SkusClient({ data }: { data: AppData }) {
 
   function getSkuByRetailer(skuName: string) {
     const items = storeItems.filter((si) => si.item === skuName);
+    const weekKeys = Object.keys(summary.weeklyTotals);
     const retailerMap = new Map<
       string,
-      { code: string; name: string; total: number; stores: number }
+      { code: string; name: string; total: number; stores: number; upspw: number }
     >();
     for (const item of items) {
       if (!retailerMap.has(item.retailerCode)) {
@@ -43,17 +44,26 @@ export function SkusClient({ data }: { data: AppData }) {
           name: item.retailer,
           total: 0,
           stores: 0,
+          upspw: 0,
         });
       }
       const r = retailerMap.get(item.retailerCode)!;
       r.total += item.total;
     }
-    // Count distinct stores per retailer
+    // Count distinct stores per retailer & compute UPSPW (single-SKU velocity)
     for (const [code, r] of retailerMap) {
-      const storeSet = new Set(
-        items.filter((i) => i.retailerCode === code).map((i) => i.store)
-      );
+      const retailerItems = items.filter((i) => i.retailerCode === code);
+      const storeSet = new Set(retailerItems.map((i) => i.store));
       r.stores = storeSet.size;
+      // For a single SKU, UPSPW = total / sum(active stores per week)
+      let totalActiveStoreWeeks = 0;
+      for (const wk of weekKeys) {
+        const activeStores = new Set(
+          retailerItems.filter((i) => (i.weeks[wk] ?? 0) > 0).map((i) => i.store)
+        );
+        totalActiveStoreWeeks += activeStores.size;
+      }
+      r.upspw = totalActiveStoreWeeks > 0 ? r.total / totalActiveStoreWeeks : 0;
     }
     return Array.from(retailerMap.values()).sort((a, b) => b.total - a.total);
   }
@@ -234,9 +244,15 @@ export function SkusClient({ data }: { data: AppData }) {
                           <p className="text-xs font-semibold text-navy truncate flex-1 mr-2">
                             {r.name}
                           </p>
-                          <span className="stat-number text-sm text-navy">
-                            {r.total.toLocaleString()}
-                          </span>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-curd/15 text-[0.6rem] font-bold text-navy">
+                              {r.upspw.toFixed(1)}
+                              <span className="text-navy/40 font-semibold">upspw</span>
+                            </span>
+                            <span className="stat-number text-sm text-navy">
+                              {r.total.toLocaleString()}
+                            </span>
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-1.5 rounded-full bg-navy/5 overflow-hidden">

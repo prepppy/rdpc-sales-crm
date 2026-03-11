@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { AppData, getSkuColor } from "@/lib/types";
+import { computeRetailerVelocity } from "@/lib/velocity";
 import { WeeklyChart } from "./WeeklyChart";
 import { SkuDonut } from "./SkuDonut";
 import Image from "next/image";
@@ -22,78 +23,10 @@ export function DashboardClient({ data }: { data: AppData }) {
     color: getSkuColor(s.name),
   }));
 
-  // --- UPSPW: Units Per SKU Per Store Per Week ---
-  const retailerVelocity = useMemo(() => {
-    // Build maps: retailerCode -> week -> Set of active stores / active SKUs
-    const activeStoresByWeek: Record<string, Record<string, Set<string>>> = {};
-    const activeSkusByWeek: Record<string, Record<string, Set<string>>> = {};
-
-    for (const item of storeItems) {
-      const rc = item.retailerCode;
-      if (!activeStoresByWeek[rc]) {
-        activeStoresByWeek[rc] = {};
-        activeSkusByWeek[rc] = {};
-      }
-      for (const [week, units] of Object.entries(item.weeks)) {
-        if (units > 0) {
-          if (!activeStoresByWeek[rc][week]) {
-            activeStoresByWeek[rc][week] = new Set();
-            activeSkusByWeek[rc][week] = new Set();
-          }
-          activeStoresByWeek[rc][week].add(item.store);
-          activeSkusByWeek[rc][week].add(item.itemCode);
-        }
-      }
-    }
-
-    const weekKeys = Object.keys(summary.weeklyTotals);
-
-    return retailers
-      .map((r) => {
-        // Per-week UPSPW: units / (active stores × active SKUs)
-        let totalStoreSkuWeeks = 0;
-        const weeklyVelocities = weekKeys.map((wk) => {
-          const stores = activeStoresByWeek[r.code]?.[wk]?.size ?? 0;
-          const skuCount = activeSkusByWeek[r.code]?.[wk]?.size ?? 0;
-          const units = r.weeks[wk] ?? 0;
-          const denom = stores * skuCount;
-          totalStoreSkuWeeks += denom;
-          return {
-            week: `WK ${wk.replace("w", "")}`,
-            velocity: denom > 0 ? units / denom : 0,
-          };
-        });
-
-        // Average UPSPW = total units / total (store × SKU × week) slots
-        const avgVelocity = totalStoreSkuWeeks > 0 ? r.total / totalStoreSkuWeeks : 0;
-
-        // Latest-week UPSPW
-        const latestWk = weekKeys[weekKeys.length - 1];
-        const latestStores = activeStoresByWeek[r.code]?.[latestWk]?.size ?? 0;
-        const latestSkus = activeSkusByWeek[r.code]?.[latestWk]?.size ?? 0;
-        const latestDenom = latestStores * latestSkus;
-        const latestUnits = r.weeks[latestWk] ?? 0;
-        const latestVelocity = latestDenom > 0 ? latestUnits / latestDenom : 0;
-
-        // Total unique stores for this retailer
-        const allStores = new Set<string>();
-        for (const storeSet of Object.values(activeStoresByWeek[r.code] ?? {})) {
-          for (const s of storeSet) allStores.add(s);
-        }
-
-        return {
-          code: r.code,
-          name: r.name,
-          avgVelocity,
-          latestVelocity,
-          latestStores,
-          totalStores: allStores.size,
-          weeklyVelocities,
-        };
-      })
-      .filter((rv) => rv.totalStores > 0)
-      .sort((a, b) => b.avgVelocity - a.avgVelocity);
-  }, [retailers, storeItems, summary.weeklyTotals]);
+  const retailerVelocity = useMemo(
+    () => computeRetailerVelocity(retailers, storeItems, summary.weeklyTotals),
+    [retailers, storeItems, summary.weeklyTotals]
+  );
 
   return (
     <div className="max-w-lg mx-auto px-4 pt-2">
@@ -147,7 +80,9 @@ export function DashboardClient({ data }: { data: AppData }) {
       <section className="card p-4 mb-4">
         <div className="flex items-center justify-between mb-3">
           <h2 className="heading-card text-sm text-navy">Store Velocity</h2>
-          <span className="pill bg-cream text-navy/70">UPSPW</span>
+          <Link href="/velocity" className="pill bg-cream-light text-navy/60 hover:bg-cream transition-colors">
+            View All
+          </Link>
         </div>
         <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
           {retailerVelocity.slice(0, 10).map((rv, i) => {

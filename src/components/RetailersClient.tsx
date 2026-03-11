@@ -2,11 +2,19 @@
 
 import { useState, useMemo } from "react";
 import { AppData, getSkuColor } from "@/lib/types";
+import { computeRetailerVelocity } from "@/lib/velocity";
 import { WeeklyChart } from "./WeeklyChart";
 import Image from "next/image";
 
 export function RetailersClient({ data }: { data: AppData }) {
-  const { retailers, storeItems } = data;
+  const { retailers, storeItems, summary } = data;
+
+  const velocityMap = useMemo(() => {
+    const vd = computeRetailerVelocity(retailers, storeItems, summary.weeklyTotals);
+    const map = new Map<string, (typeof vd)[0]>();
+    for (const rv of vd) map.set(rv.code, rv);
+    return map;
+  }, [retailers, storeItems, summary.weeklyTotals]);
   const [search, setSearch] = useState("");
   const [expandedRetailer, setExpandedRetailer] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"total" | "name">("total");
@@ -114,6 +122,8 @@ export function RetailersClient({ data }: { data: AppData }) {
           const weekData = getRetailerWeeklyData(r);
           const barPct = (r.total / maxTotal) * 100;
 
+          const rv = velocityMap.get(r.code);
+
           return (
             <div key={r.code} className="card overflow-hidden">
               <button
@@ -129,9 +139,17 @@ export function RetailersClient({ data }: { data: AppData }) {
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-navy text-sm font-semibold truncate">
-                      {r.name}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-navy text-sm font-semibold truncate">
+                        {r.name}
+                      </p>
+                      {rv && (
+                        <span className="shrink-0 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-curd/15 text-[0.6rem] font-bold text-navy">
+                          {rv.avgVelocity.toFixed(1)}
+                          <span className="text-navy/40 font-semibold">upspw</span>
+                        </span>
+                      )}
+                    </div>
                     <div className="mt-1.5 h-1.5 rounded-full bg-navy/5 overflow-hidden">
                       <div
                         className="h-full rounded-full bg-curd"
@@ -166,6 +184,24 @@ export function RetailersClient({ data }: { data: AppData }) {
                     <div className="mt-3 mb-4">
                       <p className="label-upper text-navy/40 mb-2">Weekly Trend</p>
                       <WeeklyChart data={weekData} color="#f4a81d" height={120} />
+                    </div>
+                  )}
+
+                  {/* Velocity Stats */}
+                  {rv && (
+                    <div className="flex gap-2 mb-4">
+                      <div className="flex-1 bg-curd/10 rounded-lg p-2.5 text-center">
+                        <p className="stat-number text-lg text-navy">{rv.avgVelocity.toFixed(1)}</p>
+                        <p className="text-[0.6rem] text-navy/40 font-medium">Avg UPSPW</p>
+                      </div>
+                      <div className="flex-1 bg-navy/5 rounded-lg p-2.5 text-center">
+                        <p className="stat-number text-lg text-navy">{rv.latestVelocity.toFixed(1)}</p>
+                        <p className="text-[0.6rem] text-navy/40 font-medium">Latest UPSPW</p>
+                      </div>
+                      <div className="flex-1 bg-navy/5 rounded-lg p-2.5 text-center">
+                        <p className="stat-number text-lg text-navy">{rv.totalStores}</p>
+                        <p className="text-[0.6rem] text-navy/40 font-medium">Active Stores</p>
+                      </div>
                     </div>
                   )}
 
