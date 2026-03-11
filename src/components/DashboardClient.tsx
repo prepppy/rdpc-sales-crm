@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { AppData, getSkuColor } from "@/lib/types";
 import { WeeklyChart } from "./WeeklyChart";
 import { SkuDonut } from "./SkuDonut";
@@ -7,7 +8,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 export function DashboardClient({ data }: { data: AppData }) {
-  const { summary, retailers, skus } = data;
+  const { summary, retailers, skus, storeItems } = data;
   const topRetailers = retailers.slice(0, 5);
 
   const weeklyData = Object.entries(summary.weeklyTotals).map(([key, value]) => ({
@@ -20,6 +21,70 @@ export function DashboardClient({ data }: { data: AppData }) {
     value: s.total,
     color: getSkuColor(s.name),
   }));
+
+  // --- Velocity algorithm: units per store per week ---
+  const retailerVelocity = useMemo(() => {
+    // Build a map of retailerCode -> week -> Set of active store names
+    const activeStoresByWeek: Record<string, Record<string, Set<string>>> = {};
+
+    for (const item of storeItems) {
+      if (!activeStoresByWeek[item.retailerCode]) {
+        activeStoresByWeek[item.retailerCode] = {};
+      }
+      for (const [week, units] of Object.entries(item.weeks)) {
+        if (units > 0) {
+          if (!activeStoresByWeek[item.retailerCode][week]) {
+            activeStoresByWeek[item.retailerCode][week] = new Set();
+          }
+          activeStoresByWeek[item.retailerCode][week].add(item.store);
+        }
+      }
+    }
+
+    const weekKeys = Object.keys(summary.weeklyTotals);
+
+    return retailers
+      .map((r) => {
+        // Per-week velocities
+        let totalStoreWeeks = 0;
+        const weeklyVelocities = weekKeys.map((wk) => {
+          const stores = activeStoresByWeek[r.code]?.[wk]?.size ?? 0;
+          const units = r.weeks[wk] ?? 0;
+          totalStoreWeeks += stores;
+          return {
+            week: `WK ${wk.replace("w", "")}`,
+            velocity: stores > 0 ? units / stores : 0,
+          };
+        });
+
+        // Average velocity = total units / total store-weeks
+        const avgVelocity = totalStoreWeeks > 0 ? r.total / totalStoreWeeks : 0;
+
+        // Latest-week velocity
+        const latestWk = weekKeys[weekKeys.length - 1];
+        const latestStores = activeStoresByWeek[r.code]?.[latestWk]?.size ?? 0;
+        const latestUnits = r.weeks[latestWk] ?? 0;
+        const latestVelocity = latestStores > 0 ? latestUnits / latestStores : 0;
+
+        // Total unique stores for this retailer
+        const allStores = new Set<string>();
+        for (const storeSet of Object.values(activeStoresByWeek[r.code] ?? {})) {
+          for (const s of storeSet) allStores.add(s);
+        }
+
+        return {
+          code: r.code,
+          name: r.name,
+          avgVelocity,
+          latestVelocity,
+          latestStores,
+          totalStores: allStores.size,
+          weeklyVelocities,
+        };
+      })
+      .filter((rv) => rv.totalStores > 0)
+      .sort((a, b) => b.avgVelocity - a.avgVelocity);
+  }, [retailers, storeItems, summary.weeklyTotals]);
 
   return (
     <div className="max-w-lg mx-auto px-4 pt-2">
@@ -68,6 +133,60 @@ export function DashboardClient({ data }: { data: AppData }) {
           sub="Pizza varieties"
         />
       </div>
+
+      {/* Retailer Velocity */}
+      <section className="card p-4 mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="heading-card text-sm text-navy">Store Velocity</h2>
+          <span className="pill bg-cream text-navy/70">Units/Store/Wk</span>
+        </div>
+        <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
+          {retailerVelocity.slice(0, 10).map((rv, i) => {
+            const trendUp = rv.latestVelocity >= rv.avgVelocity;
+            return (
+              <div
+                key={rv.code}
+                className={`shrink-0 rounded-xl p-3 min-w-[112px] snap-start border ${
+                  i === 0
+                    ? "bg-navy border-navy"
+                    : "bg-cream-light border-navy/8"
+                }`}
+              >
+                <p
+                  className={`text-[11px] font-medium truncate ${
+                    i === 0 ? "text-cream/70" : "text-navy/50"
+                  }`}
+                >
+                  {rv.name}
+                </p>
+                <div className="flex items-baseline gap-1 mt-1.5">
+                  <span
+                    className={`stat-number text-xl ${
+                      i === 0 ? "text-curd" : "text-navy"
+                    }`}
+                  >
+                    {rv.avgVelocity.toFixed(1)}
+                  </span>
+                  <span
+                    className={`text-[10px] font-semibold ${
+                      trendUp ? "text-okie" : "text-peppin"
+                    }`}
+                  >
+                    {trendUp ? "\u25B2" : "\u25BC"}
+                  </span>
+                </div>
+                <p
+                  className={`text-[10px] mt-1 font-medium ${
+                    i === 0 ? "text-cream/40" : "text-navy/35"
+                  }`}
+                >
+                  {rv.totalStores} store{rv.totalStores !== 1 ? "s" : ""}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       {/* Weekly Trend */}
       <section className="card p-4 mb-4">
