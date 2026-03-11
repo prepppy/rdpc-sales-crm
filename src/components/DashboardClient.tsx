@@ -22,21 +22,26 @@ export function DashboardClient({ data }: { data: AppData }) {
     color: getSkuColor(s.name),
   }));
 
-  // --- Velocity algorithm: units per store per week ---
+  // --- UPSPW: Units Per SKU Per Store Per Week ---
   const retailerVelocity = useMemo(() => {
-    // Build a map of retailerCode -> week -> Set of active store names
+    // Build maps: retailerCode -> week -> Set of active stores / active SKUs
     const activeStoresByWeek: Record<string, Record<string, Set<string>>> = {};
+    const activeSkusByWeek: Record<string, Record<string, Set<string>>> = {};
 
     for (const item of storeItems) {
-      if (!activeStoresByWeek[item.retailerCode]) {
-        activeStoresByWeek[item.retailerCode] = {};
+      const rc = item.retailerCode;
+      if (!activeStoresByWeek[rc]) {
+        activeStoresByWeek[rc] = {};
+        activeSkusByWeek[rc] = {};
       }
       for (const [week, units] of Object.entries(item.weeks)) {
         if (units > 0) {
-          if (!activeStoresByWeek[item.retailerCode][week]) {
-            activeStoresByWeek[item.retailerCode][week] = new Set();
+          if (!activeStoresByWeek[rc][week]) {
+            activeStoresByWeek[rc][week] = new Set();
+            activeSkusByWeek[rc][week] = new Set();
           }
-          activeStoresByWeek[item.retailerCode][week].add(item.store);
+          activeStoresByWeek[rc][week].add(item.store);
+          activeSkusByWeek[rc][week].add(item.itemCode);
         }
       }
     }
@@ -45,26 +50,30 @@ export function DashboardClient({ data }: { data: AppData }) {
 
     return retailers
       .map((r) => {
-        // Per-week velocities
-        let totalStoreWeeks = 0;
+        // Per-week UPSPW: units / (active stores × active SKUs)
+        let totalStoreSkuWeeks = 0;
         const weeklyVelocities = weekKeys.map((wk) => {
           const stores = activeStoresByWeek[r.code]?.[wk]?.size ?? 0;
+          const skuCount = activeSkusByWeek[r.code]?.[wk]?.size ?? 0;
           const units = r.weeks[wk] ?? 0;
-          totalStoreWeeks += stores;
+          const denom = stores * skuCount;
+          totalStoreSkuWeeks += denom;
           return {
             week: `WK ${wk.replace("w", "")}`,
-            velocity: stores > 0 ? units / stores : 0,
+            velocity: denom > 0 ? units / denom : 0,
           };
         });
 
-        // Average velocity = total units / total store-weeks
-        const avgVelocity = totalStoreWeeks > 0 ? r.total / totalStoreWeeks : 0;
+        // Average UPSPW = total units / total (store × SKU × week) slots
+        const avgVelocity = totalStoreSkuWeeks > 0 ? r.total / totalStoreSkuWeeks : 0;
 
-        // Latest-week velocity
+        // Latest-week UPSPW
         const latestWk = weekKeys[weekKeys.length - 1];
         const latestStores = activeStoresByWeek[r.code]?.[latestWk]?.size ?? 0;
+        const latestSkus = activeSkusByWeek[r.code]?.[latestWk]?.size ?? 0;
+        const latestDenom = latestStores * latestSkus;
         const latestUnits = r.weeks[latestWk] ?? 0;
-        const latestVelocity = latestStores > 0 ? latestUnits / latestStores : 0;
+        const latestVelocity = latestDenom > 0 ? latestUnits / latestDenom : 0;
 
         // Total unique stores for this retailer
         const allStores = new Set<string>();
@@ -138,7 +147,7 @@ export function DashboardClient({ data }: { data: AppData }) {
       <section className="card p-4 mb-4">
         <div className="flex items-center justify-between mb-3">
           <h2 className="heading-card text-sm text-navy">Store Velocity</h2>
-          <span className="pill bg-cream text-navy/70">Units/Store/Wk</span>
+          <span className="pill bg-cream text-navy/70">UPSPW</span>
         </div>
         <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
           {retailerVelocity.slice(0, 10).map((rv, i) => {
